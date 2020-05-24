@@ -75,4 +75,11 @@ reduce_lr=ReduceLROnPlateau(monitor='val_loss',factor=0.5,
 callbacks_list=[checkpoint,es,reduce_lr]
 
 model.fit_generator(generator=train_generator,
-                    steps_per_epoch=train_generator.steps_per_epoch)
+                    steps_per_epoch=train_generator.steps_per_epoch,
+                    epochs=runs,
+                    callbacks=callbacks_list,
+                    validation_data=validation_generator,
+                    validation_steps=validation_generator.steps_per_epoch,
+                    workers=8,
+                    use_multiprocessing=True,
+                    initial_epoch=start_epoch)
