@@ -29,6 +29,7 @@ class Data_Generator(Sequence):
             for j in range(self.filenames[i][1]-sequence_length):
                 self.indexes[pos][0]=i
                 self.indexes[pos][1]=j
+                pos+=1
         self.on_epoch_end()
 
     def on_epoch_end(self):
@@ -66,7 +67,7 @@ def get_data():
     path=os.getcwd()
 
     for piece in data:
-        filename=path+'\\processed_beats\\'+piece['midi_filename'][5:-5]+'.npy'
+        filename=path+'/processed_beats/'+piece['midi_filename'][5:-5]+'.npy'
         duration=np.load(filename).shape[0]
         if piece['split']=='train':
             train_data.append([filename,duration])
@@ -83,7 +84,7 @@ def process_data():
 
     for file in files:
         name=file[11:-5]
-        if ('processed_beats\\'+name+'.npy') in already:
+        if ('processed_beats/'+name+'.npy') in already:
             print("Already got file.")
             continue
         try:
@@ -122,7 +123,7 @@ def process_data():
                     for i in range(duration):
                         holder[offset+i][element.pitch.midi-21]=1
 
-        np.save(os.getcwd()+'\\processed_beats\\'+name,holder)
+        np.save(os.getcwd()+'/processed_beats/'+name,holder)
 
 ##if __name__=='__main__':
 ##    process_data()

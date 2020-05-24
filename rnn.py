@@ -42,6 +42,9 @@ model.add(Dropout(0.3))
 model.add(LSTM(512,return_sequences=True))
 model.add(Dropout(0.3))
 
+model.add(LSTM(512,return_sequences=True))
+model.add(Dropout(0.3))
+
 model.add(Flatten())
 model.add(Dense(datasize,activation='sigmoid'))
 
@@ -54,7 +57,7 @@ a=model.predict(np.zeros((1,sequence_length,datasize)))
 model.fit(np.zeros((1,sequence_length,datasize)),np.zeros((1,datasize)),epochs=1,verbose=0)
 
 try:
-    pass
+    model.load_weights('weights.hdf5')
 except:
     print("Cannot load weights. Generating new model.")
 
@@ -76,7 +79,7 @@ callbacks_list=[checkpoint,es,reduce_lr]
 
 model.fit_generator(generator=train_generator,
                     steps_per_epoch=train_generator.steps_per_epoch,
-                    epochs=runs,
+                    epochs=total_epochs,
                     callbacks=callbacks_list,
                     validation_data=validation_generator,
                     validation_steps=validation_generator.steps_per_epoch,
