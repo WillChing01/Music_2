@@ -48,7 +48,7 @@ model.add(CuDNNLSTM(512,return_sequences=True))
 model.add(Dropout(0.3))
 
 model.add(CuDNNLSTM(512,return_sequences=True))
-model.add(Dropout(0.3)
+model.add(Dropout(0.3))
 
 model.add(Flatten())
 model.add(Dense(datasize,activation='sigmoid'))
