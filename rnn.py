@@ -4,7 +4,7 @@ import os
 import random
 from keras.models import Sequential,save_model,load_model
 from keras.layers import Dense,Dropout,CuDNNLSTM,Bidirectional,Flatten
-from keras.callbacks import ModelCheckpoint,EarlyStopping,ReduceLROnPlateau
+from keras.callbacks import ModelCheckpoint,EarlyStopping,LearningRateScheduler
 from keras_self_attention import SeqSelfAttention
 from keras import optimizers
 
@@ -21,6 +21,11 @@ sequence_length=64
 datasize=88
 
 start_epoch=0
+
+def step_decay(epoch):
+    initial_lrate=0.001
+    decay=0.9
+    return initial_lrate*(decay**epoch)
 
 train_data,validation_data,test_data=get_data()
 random.shuffle(train_data)
@@ -72,10 +77,9 @@ checkpoint=ModelCheckpoint(pathname,period=1,monitor='val_loss',
 
 es=EarlyStopping(monitor='val_loss',mode='min',verbose=1,patience=stop_patience)
 
-reduce_lr=ReduceLROnPlateau(monitor='val_loss',factor=0.5,
-                            patience=lr_patience,verbose=1)
+lrate=LearningRateScheduler(step_decay)
 
-callbacks_list=[checkpoint,es,reduce_lr]
+callbacks_list=[checkpoint,es,lrate]
 
 model.fit_generator(generator=train_generator,
                     steps_per_epoch=train_generator.steps_per_epoch,
