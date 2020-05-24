@@ -3,7 +3,7 @@ import sys
 import os
 import random
 from keras.models import Sequential,save_model,load_model
-from keras.layers import Dense,Dropout,LSTM,Bidirectional,Flatten
+from keras.layers import Dense,Dropout,CuDNNLSTM,Bidirectional,Flatten
 from keras.callbacks import ModelCheckpoint,EarlyStopping,ReduceLROnPlateau
 from keras_self_attention import SeqSelfAttention
 from keras import optimizers
@@ -15,7 +15,7 @@ from data_pipeline import *
 total_epochs=500
 data_batchsize=256
 stop_patience=10
-lr_patience=2
+lr_patience=1
 
 sequence_length=64
 datasize=88
@@ -33,17 +33,17 @@ test_generator=Data_Generator(test_data,data_batchsize)
 
 model=Sequential()
         
-model.add(Bidirectional(LSTM(512,
+model.add(Bidirectional(CuDNNLSTM(512,
                              input_shape=(sequence_length,datasize),
                              return_sequences=True)))
 model.add(SeqSelfAttention(attention_activation='sigmoid'))
 model.add(Dropout(0.3))
 
-model.add(LSTM(512,return_sequences=True))
+model.add(CuDNNLSTM(512,return_sequences=True))
 model.add(Dropout(0.3))
 
-model.add(LSTM(512,return_sequences=True))
-model.add(Dropout(0.3))
+model.add(CuDNNLSTM(512,return_sequences=True))
+model.add(Dropout(0.3)
 
 model.add(Flatten())
 model.add(Dense(datasize,activation='sigmoid'))
