@@ -1,4 +1,4 @@
-from music21 import converter,instrument,note,chord
+from mido import MidiFile
 import numpy as np
 import sys
 import os
@@ -9,16 +9,19 @@ from keras.utils import Sequence
 
 sys.path.insert(0,os.getcwd())
 
-datasize=88
+datasize=88+88+100 #note_on,note_off,time_shift
 sequence_length=64
+
 data_trans=[-3,3]
+time_trans=[-0.05,-0.025,0,0.025,0.05]
 
 class Data_Generator(Sequence):
 
-    def __init__(self,filenames,batch_size):
+    def __init__(self,filenames,batch_size,training=True):
         #filename - [[filename[0],size[0]],[filename[1],size[1]],...]
         self.filenames=sorted(filenames,key=lambda x:x[1],reverse=True)
         self.batchsize=batch_size
+        self.training=training
 
         self.samples=sum([file[1]-sequence_length for file in self.filenames])
         self.steps_per_epoch=self.samples//self.batchsize
@@ -45,14 +48,34 @@ class Data_Generator(Sequence):
         y_data=np.zeros((self.batchsize,datasize),dtype=np.int8)
 
         for i in range(len(indices)):
-            sequence=np.load(self.filenames[indices[i][0]][0])
-            sequence_x=sequence[indices[i][1]:indices[i][1]+sequence_length]
-            sequence_y=sequence[indices[i][1]+sequence_length]
-
             #apply random transposition.
-            trans=np.random.randint(data_trans[0],data_trans[1]+1)
-            x_data[i]=[np.roll(a,trans,axis=0) for a in sequence_x]
-            y_data[i]=np.roll(sequence_y,trans,axis=0)
+            if self.training:
+                trans=np.random.randint(data_trans[0],data_trans[1]+1)
+                speed=time_trans[np.random.randint(0,len(time_trans))]
+            else:
+                trans=0
+                speed=0
+            
+            sequence=np.load(self.filenames[indices[i][0]][0])
+
+            for j in range(sequence_length):
+                thing=sequence[indices[i][1]+j]
+                if thing<176:
+                    x_data[i][j][thing+trans]=1
+                else:
+                    d=round((thing-175)*(1+speed))
+                    d=max(d,1)
+                    d=min(d,100)
+                    x_data[i][j][d+175]=1
+
+            thing=sequence[indices[i][1]+sequence_length]
+            if thing<176:
+                y_data[i][thing+trans]=1
+            else:
+                d=round((thing-175)*(1+speed))
+                d=max(d,1)
+                d=min(d,100)
+                y_data[i][d+175]=1
 
         return x_data,y_data
                 
@@ -82,48 +105,45 @@ def process_data():
     files=sorted(glob.glob('midi_files/*.midi'))
     already=sorted(glob.glob('processed_beats/*.npy'))
 
+    if len(already)==len(files):
+        print("Got all files.")
+        return None
+
     for file in files:
         name=file[11:-5]
-        if ('processed_beats/'+name+'.npy') in already:
-            print("Already got file.")
+        if ('processed_beats\\'+name+'.npy') in already:
+            print("Already got:",file)
             continue
         try:
-            midi=converter.parse(file)
+            midi=MidiFile(file)
             print("Successfully read:",file)
         except:
             print("Error. Can't read:",file)
             continue
-        notes_to_parse=None
 
-        parts=instrument.partitionByInstrument(midi)
-
-        if parts:
-            notes_to_parse=parts.parts[0].recurse()
-        else:
-            notes_to_parse=midi.flat.notes
-
-        total_length=0
-        for element in notes_to_parse:
-            if isinstance(element,note.Note) or isinstance(element,chord.Chord) or isinstance(element,note.Rest):
-                if round(4*element.offset)+round(4*element.quarterLength)>total_length:
-                    total_length=round(4*element.offset)+round(4*element.quarterLength)
-
-        print(total_length)
-        holder=np.zeros((total_length,datasize),dtype=np.int8)
-        for element in notes_to_parse:
-            if isinstance(element,note.Note) or isinstance(element,chord.Chord):
-                offset=round(4*element.offset)
-                duration=round(4*element.quarterLength)
-                if isinstance(element,chord.Chord):
-                    notes=[pitch.midi-21 for pitch in element.pitches]
-                    for i in range(duration):
-                        for pitch in notes:
-                            holder[offset+i][pitch]=1
+        notes=[i for i in midi]
+        buffer=0
+        holder=[]
+        
+        for msg in notes:
+            buffer+=msg.time
+            if msg.type=='control_change':
+                #pedals+sfx
+                pass
+            elif msg.type=='note_on':
+                totalbuff=min(round(100*buffer),100)
+                if totalbuff!=0:
+                    holder.append(88+88+totalbuff-1)
+                if msg.velocity==0:
+                    holder.append(88+msg.note-21)
                 else:
-                    for i in range(duration):
-                        holder[offset+i][element.pitch.midi-21]=1
+                    holder.append(msg.note-21)
+                buffer=0
+
+        holder=np.reshape(holder,(len(holder),))
+        holder=holder.astype(np.int16)
 
         np.save(os.getcwd()+'/processed_beats/'+name,holder)
 
-##if __name__=='__main__':
-##    process_data()
+if __name__=='__main__':
+    process_data()

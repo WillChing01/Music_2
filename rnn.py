@@ -17,9 +17,6 @@ data_batchsize=256
 stop_patience=10
 lr_patience=1
 
-sequence_length=64
-datasize=88
-
 start_epoch=0
 
 def step_decay(epoch):
@@ -33,8 +30,8 @@ random.shuffle(validation_data)
 random.shuffle(test_data)
 
 train_generator=Data_Generator(train_data,data_batchsize)
-validation_generator=Data_Generator(validation_data,data_batchsize)
-test_generator=Data_Generator(test_data,data_batchsize)
+validation_generator=Data_Generator(validation_data,data_batchsize,training=False)
+test_generator=Data_Generator(test_data,data_batchsize,training=False)
 
 model=Sequential()
         
@@ -42,20 +39,20 @@ model.add(Bidirectional(CuDNNLSTM(512,
                              input_shape=(sequence_length,datasize),
                              return_sequences=True)))
 model.add(SeqSelfAttention(attention_activation='sigmoid'))
-model.add(Dropout(0.3))
+#model.add(Dropout(0.3))
 
 model.add(CuDNNLSTM(512,return_sequences=True))
-model.add(Dropout(0.3))
+#model.add(Dropout(0.3))
 
 model.add(CuDNNLSTM(512,return_sequences=True))
-model.add(Dropout(0.3))
+#model.add(Dropout(0.3))
 
 model.add(Flatten())
-model.add(Dense(datasize,activation='sigmoid'))
+model.add(Dense(datasize,activation='softmax'))
 
 opt=optimizers.adam(learning_rate=0.001,clipnorm=5)
 
-model.compile(loss='binary_crossentropy',optimizer=opt)
+model.compile(loss='categorical_crossentropy',optimizer=opt)
 
 a=model.predict(np.zeros((1,sequence_length,datasize)))
 
