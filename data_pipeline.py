@@ -63,7 +63,7 @@ class Data_Generator(Sequence):
                 if thing<176:
                     x_data[i][j][thing+trans]=1
                 else:
-                    d=round((thing-175)*(1+speed))
+                    d=int(round((thing-175)*(1+speed)))
                     d=max(d,1)
                     d=min(d,100)
                     x_data[i][j][d+175]=1
@@ -72,7 +72,7 @@ class Data_Generator(Sequence):
             if thing<176:
                 y_data[i][thing+trans]=1
             else:
-                d=round((thing-175)*(1+speed))
+                d=int(round((thing-175)*(1+speed)))
                 d=max(d,1)
                 d=min(d,100)
                 y_data[i][d+175]=1
