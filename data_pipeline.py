@@ -5,11 +5,23 @@ import os
 import glob
 import json
 import math
-from keras.utils import Sequence
+from tensorflow.keras.utils import Sequence
 
 sys.path.insert(0,os.getcwd())
 
-datasize=88+88+100 #note_on,note_off,time_shift
+"""
+Data representation (1-hot vector):
+
+225 events:
+    -1 zero velocity
+    -32 velocity (0,127]
+    -88 pitch (plays note at current velocity)
+    -4 pedal (sustain on/off, soft on/off)
+    -100 time shift (0.01-1.00 seconds)
+    
+"""
+
+datasize=225
 sequence_length=64
 
 data_trans=[-3,3]
@@ -44,8 +56,8 @@ class Data_Generator(Sequence):
     def __getitem__(self,idx):
         indices=self.indexes[idx*self.batchsize:(idx+1)*self.batchsize]
 
-        x_data=np.zeros((self.batchsize,sequence_length,datasize),dtype=np.int8)
-        y_data=np.zeros((self.batchsize,datasize),dtype=np.int8)
+        x_data=np.zeros((self.batchsize,sequence_length,datasize),dtype=np.float32)
+        y_data=np.zeros((self.batchsize,datasize),dtype=np.float32)
 
         for i in range(len(indices)):
             #apply random transposition.
@@ -60,22 +72,28 @@ class Data_Generator(Sequence):
 
             for j in range(sequence_length):
                 thing=sequence[indices[i][1]+j]
-                if thing<176:
-                    x_data[i][j][thing+trans]=1
+                if thing<125:
+                    if 33<=thing<121:
+                        x_data[i][j][thing+trans]=1
+                    else:
+                        x_data[i][j][thing]=1
                 else:
-                    d=int(round((thing-175)*(1+speed)))
+                    d=int(round((thing-124)*(1+speed)))
                     d=max(d,1)
                     d=min(d,100)
-                    x_data[i][j][d+175]=1
+                    x_data[i][j][d+124]=1
 
             thing=sequence[indices[i][1]+sequence_length]
-            if thing<176:
-                y_data[i][thing+trans]=1
+            if thing<125:
+                if 33<=thing<121:
+                    y_data[i][thing+trans]=1
+                else:
+                    y_data[i][thing]=1
             else:
-                d=int(round((thing-175)*(1+speed)))
+                d=int(round((thing-124)*(1+speed)))
                 d=max(d,1)
                 d=min(d,100)
-                y_data[i][d+175]=1
+                y_data[i][d+124]=1
 
         return x_data,y_data
                 
@@ -123,21 +141,53 @@ def process_data():
 
         notes=[i for i in midi]
         buffer=0
+        pedals=[0,0]
         holder=[]
         
         for msg in notes:
             buffer+=msg.time
             if msg.type=='control_change':
-                #pedals+sfx
-                pass
+                #pedals.
+                if msg.control==64:
+                    if msg.value<64 and pedals[0]==1:
+                        totalbuff=min(round(100*buffer),100)
+                        if totalbuff!=0:
+                            holder.append(124+totalbuff)
+                        holder.append(122)
+                        buffer=0
+                        pedals[0]=0
+                    elif msg.value>=64 and pedals[0]==0:
+                        totalbuff=min(round(100*buffer),100)
+                        if totalbuff!=0:
+                            holder.append(124+totalbuff)
+                        holder.append(121)
+                        buffer=0
+                        pedals[0]=1
+                elif msg.control==67:
+                    if msg.value<64 and pedals[1]==1:
+                        totalbuff=min(round(100*buffer),100)
+                        if totalbuff!=0:
+                            holder.append(124+totalbuff)
+                        holder.append(124)
+                        buffer=0
+                        pedals[1]=0
+                    elif msg.value>=64 and pedals[1]==0:
+                        totalbuff=min(round(100*buffer),100)
+                        if totalbuff!=0:
+                            holder.append(124+totalbuff)
+                        holder.append(123)
+                        buffer=0
+                        pedals[1]=1
             elif msg.type=='note_on':
                 totalbuff=min(round(100*buffer),100)
                 if totalbuff!=0:
-                    holder.append(88+88+totalbuff-1)
+                    holder.append(124+totalbuff)
                 if msg.velocity==0:
-                    holder.append(88+msg.note-21)
+                    holder.append(0)
+                    holder.append(12+msg.note)
                 else:
-                    holder.append(msg.note-21)
+                    holder.append(math.floor(msg.velocity/4)+1)
+                    holder.append(12+msg.note)
                 buffer=0
 
         holder=np.reshape(holder,(len(holder),))
