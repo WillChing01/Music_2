@@ -6,6 +6,7 @@ import glob
 import json
 import math
 from tensorflow.keras.utils import Sequence
+import time
 
 sys.path.insert(0,os.getcwd())
 
@@ -142,6 +143,7 @@ def process_data():
         notes=[i for i in midi]
         buffer=0
         pedals=[0,0]
+        velocity=200 #purposely silly.
         holder=[]
         
         for msg in notes:
@@ -183,10 +185,14 @@ def process_data():
                 if totalbuff!=0:
                     holder.append(124+totalbuff)
                 if msg.velocity==0:
-                    holder.append(0)
+                    if velocity!=msg.velocity:
+                        velocity=msg.velocity
+                        holder.append(0)
                     holder.append(12+msg.note)
                 else:
-                    holder.append(math.floor(msg.velocity/4)+1)
+                    if math.floor(velocity/4)!=math.floor(msg.velocity/4):
+                        velocity=msg.velocity
+                        holder.append(math.floor(velocity/4)+1)
                     holder.append(12+msg.note)
                 buffer=0
 
