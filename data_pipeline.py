@@ -23,7 +23,7 @@ Data representation (1-hot vector):
 """
 
 datasize=225
-sequence_length=64
+sequence_length=256
 
 data_trans=[-3,3]
 time_trans=[-0.05,-0.025,0,0.025,0.05]

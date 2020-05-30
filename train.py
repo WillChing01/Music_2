@@ -2,8 +2,8 @@ import numpy as np
 import sys
 import os
 import random
-from tensorflow.keras.callbacks import ModelCheckpoint,EarlyStopping,LearningRateScheduler
-from tensorflow.keras import optimizers
+from keras.callbacks import ModelCheckpoint,EarlyStopping,LearningRateScheduler
+from keras import optimizers
 
 sys.path.insert(0,os.getcwd())
 
@@ -33,6 +33,8 @@ model.compile(loss='categorical_crossentropy',optimizer=opt)
 
 a=model.predict(np.zeros((1,sequence_length,datasize)))
 
+model.fit(np.zeros((1,sequence_length,datasize)),np.zeros((1,datasize)),epochs=1,verbose=0)
+
 try:
     model.load_weights('weights.hdf5')
     print("Successfully loaded previous weights.")
@@ -50,11 +52,11 @@ lrate=LearningRateScheduler(step_decay)
 callbacks_list=[checkpoint,es,lrate]
 
 model.fit_generator(train_generator,
-                    steps_per_epoch=train_generator.steps_per_epoch,
+                    steps_per_epoch=100000,
                     initial_epoch=start_epoch,
                     epochs=total_epochs,
                     callbacks=callbacks_list,
                     validation_data=validation_generator,
-                    validation_steps=validation_generator.steps_per_epoch,
+                    validation_steps=10000,
                     workers=8,
                     use_multiprocessing=True)
