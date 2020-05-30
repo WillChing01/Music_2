@@ -23,8 +23,6 @@ def step_decay(epoch):
     return initial_lrate*(decay**epoch)
 
 train_data,validation_data,test_data=get_data()
-random.shuffle(train_data)
-random.shuffle(validation_data)
 
 train_generator=Data_Generator(train_data,data_batchsize)
 validation_generator=Data_Generator(validation_data,data_batchsize,training=False)
@@ -51,12 +49,12 @@ lrate=LearningRateScheduler(step_decay)
 
 callbacks_list=[checkpoint,es,lrate]
 
-model.fit(x=train_generator,
-          steps_per_epoch=train_generator.steps_per_epoch,
-          initial_epoch=start_epoch,
-          epochs=total_epochs,
-          callbacks=callbacks_list,
-          validation_data=validation_generator,
-          validation_steps=validation_generator.steps_per_epoch,
-          workers=8,
-          use_multiprocessing=True)
+model.fit_generator(train_generator,
+                    steps_per_epoch=train_generator.steps_per_epoch,
+                    initial_epoch=start_epoch,
+                    epochs=total_epochs,
+                    callbacks=callbacks_list,
+                    validation_data=validation_generator,
+                    validation_steps=validation_generator.steps_per_epoch,
+                    workers=8,
+                    use_multiprocessing=True)
