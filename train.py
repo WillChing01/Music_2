@@ -12,7 +12,7 @@ from model_architecture import *
 
 total_epochs=500
 data_batchsize=64
-stop_patience=10
+stop_patience=4
 lr_patience=1
 
 start_epoch=0
@@ -52,11 +52,11 @@ lrate=LearningRateScheduler(step_decay)
 callbacks_list=[checkpoint,es,lrate]
 
 model.fit_generator(train_generator,
-                    steps_per_epoch=100000,
+                    steps_per_epoch=train_generator.steps_per_epoch,
                     initial_epoch=start_epoch,
                     epochs=total_epochs,
                     callbacks=callbacks_list,
                     validation_data=validation_generator,
-                    validation_steps=10000,
+                    validation_steps=validation_generator.steps_per_epoch,
                     workers=8,
-                    use_multiprocessing=True)
+                    use_multiprocessing=False)

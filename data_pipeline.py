@@ -13,20 +13,20 @@ sys.path.insert(0,os.getcwd())
 """
 Data representation (1-hot vector):
 
-225 events:
-    -1 zero velocity
-    -32 velocity (0,127]
-    -88 pitch (plays note at current velocity)
+312-size 1-hot vector.
+    -88 note on
+    -88 note off
+    -32 velocity
     -4 pedal (sustain on/off, soft on/off)
     -100 time shift (0.01-1.00 seconds)
     
 """
 
-datasize=225
+datasize=312
 sequence_length=256
 
 data_trans=[-3,3]
-time_trans=[-0.05,-0.025,0,0.025,0.05]
+time_trans=[-0.1,-0.075,-0.05,-0.025,0,0.025,0.05,0.075,0.1]
 
 class Data_Generator(Sequence):
 
@@ -144,6 +144,7 @@ def process_data():
         buffer=0
         pedals=[0,0]
         velocity=200 #purposely silly.
+        keyboard=[0 for i in range(88)]
         holder=[]
         
         for msg in notes:
@@ -152,48 +153,51 @@ def process_data():
                 #pedals.
                 if msg.control==64:
                     if msg.value<64 and pedals[0]==1:
+                        #sustain off.
                         totalbuff=min(round(100*buffer),100)
                         if totalbuff!=0:
-                            holder.append(124+totalbuff)
-                        holder.append(122)
+                            holder.append(211+totalbuff)
+                        holder.append(88+88+32+1)
                         buffer=0
                         pedals[0]=0
                     elif msg.value>=64 and pedals[0]==0:
+                        #sustain on.
                         totalbuff=min(round(100*buffer),100)
                         if totalbuff!=0:
-                            holder.append(124+totalbuff)
-                        holder.append(121)
+                            holder.append(211+totalbuff)
+                        holder.append(88+88+32)
                         buffer=0
                         pedals[0]=1
                 elif msg.control==67:
                     if msg.value<64 and pedals[1]==1:
+                        #soft off.
                         totalbuff=min(round(100*buffer),100)
                         if totalbuff!=0:
-                            holder.append(124+totalbuff)
-                        holder.append(124)
+                            holder.append(211+totalbuff)
+                        holder.append(88+88+32+3)
                         buffer=0
                         pedals[1]=0
                     elif msg.value>=64 and pedals[1]==0:
+                        #soft on.
                         totalbuff=min(round(100*buffer),100)
                         if totalbuff!=0:
-                            holder.append(124+totalbuff)
-                        holder.append(123)
+                            holder.append(211+totalbuff)
+                        holder.append(88+88+32+2)
                         buffer=0
                         pedals[1]=1
             elif msg.type=='note_on':
                 totalbuff=min(round(100*buffer),100)
                 if totalbuff!=0:
-                    holder.append(124+totalbuff)
-                if msg.velocity==0:
-                    if velocity!=msg.velocity:
-                        velocity=msg.velocity
-                        holder.append(0)
-                    holder.append(12+msg.note)
-                else:
-                    if math.floor(velocity/4)!=math.floor(msg.velocity/4):
-                        velocity=msg.velocity
-                        holder.append(math.floor(velocity/4)+1)
-                    holder.append(12+msg.note)
+                    holder.append(211+totalbuff)
+                if msg.velocity==0 and keyboard[msg.note-21]==1:
+                    keyboard[msg.note-21]=0
+                    holder.append(88+msg.note-21)
+                elif msg.velocity!=0 and keyboard[msg.note-21]==0:
+                    keyboard[msg.note-21]=1
+                    if velocity!=math.floor(msg.velocity/4):
+                        velocity=math.floor(msg.velocity/4)
+                        holder.append(88+88+velocity)
+                    holder.append(msg.note-21)
                 buffer=0
 
         holder=np.reshape(holder,(len(holder),))

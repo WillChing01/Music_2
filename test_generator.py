@@ -92,11 +92,3 @@ class Dataset(object):
             y_data[d+124]=1
 
         return (x_data,y_data)
-
-a,b,c=get_data()
-dataset=Dataset(b)
-start=time.time()
-for i in range(100):
-    out=next(dataset.iterator)
-end=time.time()
-print(end-start)
