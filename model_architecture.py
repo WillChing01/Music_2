@@ -2,7 +2,7 @@ import sys
 import os
 from keras.models import Sequential
 from keras.layers import Dense,CuDNNLSTM,Bidirectional,Flatten
-from keras-self-attention import SeqSelfAttention
+from keras_self_attention import SeqSelfAttention
 
 sys.path.insert(0,os.getcwd())
 

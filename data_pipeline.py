@@ -5,7 +5,7 @@ import os
 import glob
 import json
 import math
-from tensorflow.keras.utils import Sequence
+from keras.utils import Sequence
 import time
 
 sys.path.insert(0,os.getcwd())
@@ -73,28 +73,28 @@ class Data_Generator(Sequence):
 
             for j in range(sequence_length):
                 thing=sequence[indices[i][1]+j]
-                if thing<125:
-                    if 33<=thing<121:
+                if thing<212:
+                    if thing<176:
                         x_data[i][j][thing+trans]=1
                     else:
                         x_data[i][j][thing]=1
                 else:
-                    d=int(round((thing-124)*(1+speed)))
+                    d=int(round((thing-211)*(1+speed)))
                     d=max(d,1)
                     d=min(d,100)
-                    x_data[i][j][d+124]=1
+                    x_data[i][j][d+211]=1
 
             thing=sequence[indices[i][1]+sequence_length]
-            if thing<125:
-                if 33<=thing<121:
+            if thing<212:
+                if thing<176:
                     y_data[i][thing+trans]=1
                 else:
                     y_data[i][thing]=1
             else:
-                d=int(round((thing-124)*(1+speed)))
+                d=int(round((thing-211)*(1+speed)))
                 d=max(d,1)
                 d=min(d,100)
-                y_data[i][d+124]=1
+                y_data[i][d+211]=1
 
         return x_data,y_data
                 

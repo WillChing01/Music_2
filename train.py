@@ -11,9 +11,8 @@ from data_pipeline import *
 from model_architecture import *
 
 total_epochs=500
-data_batchsize=64
-stop_patience=4
-lr_patience=1
+data_batchsize=256
+stop_patience=1
 
 start_epoch=0
 
@@ -27,7 +26,7 @@ train_data,validation_data,test_data=get_data()
 train_generator=Data_Generator(train_data,data_batchsize)
 validation_generator=Data_Generator(validation_data,data_batchsize,training=False)
 
-opt=optimizers.Adam(learning_rate=0,clipnorm=5)
+opt=optimizers.Adam(learning_rate=0,clipnorm=5,epsilon=0.001)
 
 model.compile(loss='categorical_crossentropy',optimizer=opt)
 

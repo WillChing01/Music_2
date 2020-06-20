@@ -47,22 +47,22 @@ def create_song(total_length):
     midi.tracks.append(track)
 
     keyboard=[0 for i in range(88)]
-    pedals=[0,0]
+    pedal=[0,0]
     vel=0
 
     for element in total_output:
         if element>211:
-            d+=(element-211)*9.6)
+            d+=(element-211)*9.6
         else:
             if element<88 and keyboard[element]==0:
                 #note on.
                 keyboard[element]=1
-                midi.tracks[0].append(mido.Message('note_on',note=element+21,velocity=vel,time=round(d)))
+                midi.tracks[0].append(mido.Message('note_on',note=element+21,velocity=vel,time=int(round(d))))
                 d=0
             elif 88<=element<88+88 and keyboard[element-88]==1:
                 #note off.
                 keyboard[element-88]=0
-                midi.tracks[0].append(mido.Message('note_on',note=element-88+21,velocity=0,time=round(d)))
+                midi.tracks[0].append(mido.Message('note_on',note=element-88+21,velocity=0,time=int(round(d))))
                 d=0
             elif 88+88<=element<88+88+32:
                 #vel.
@@ -70,19 +70,19 @@ def create_song(total_length):
             else:
                 if element==88+88+32 and pedal[0]==0:
                     pedal[0]=1
-                    midi.tracks[0].append(mido.Message('control_change',control=64,value=127,time=round(d)))
+                    midi.tracks[0].append(mido.Message('control_change',control=64,value=127,time=int(round(d))))
                     d=0
                 elif element==88+88+32+1 and pedal[0]==1:
                     pedal[0]=0
-                    midi.tracks[0].append(mido.Message('control_change',control=64,value=0,time=round(d)))
+                    midi.tracks[0].append(mido.Message('control_change',control=64,value=0,time=int(round(d))))
                     d=0
                 elif element==88+88+32+2 and pedal[1]==0:
                     pedal[1]=1
-                    midi.tracks[0].append(mido.Message('control_change',control=67,value=127,time=round(d)))
+                    midi.tracks[0].append(mido.Message('control_change',control=67,value=127,time=int(round(d))))
                     d=0
                 elif element==88+88+32+3 and pedal[1]==1:
                     pedal[1]=0
-                    midi.tracks[0].append(mido.Message('control_change',control=67,value=0,time=round(d)))
+                    midi.tracks[0].append(mido.Message('control_change',control=67,value=0,time=int(round(d))))
                     d=0
 
     return midi
